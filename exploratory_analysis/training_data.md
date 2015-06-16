@@ -33,3 +33,15 @@ train  train.zip
 
 ```
 
+Case Information
+```
+Cases     Level			Proportion
+
+25810  0 - No DR             73%
+ 2443  1 - Mild               7%
+ 5292  2 - Moderate          15%
+  873  3 - Severe             2%
+  708  4 - Proliferative DR   2%
+35126  Total
+```
+
