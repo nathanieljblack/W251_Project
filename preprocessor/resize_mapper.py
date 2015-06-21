@@ -44,10 +44,11 @@ IMAGE_SIZE = 512
 
 for file in sys.stdin:
     file = file.strip()
+    print file
     im = io.imread(file)
     sq_im = make_square(im)
     cr_im = crop(sq_im)
     re_im = resize_image(cr_im, IMAGE_SIZE)
     outfile = out_dir + '/' + os.path.basename(file)
     io.imsave(outfile, re_im)
-    sys.stdout.write("Success\t1\n")
+    #sys.stdout.write("Success\t1\n")
