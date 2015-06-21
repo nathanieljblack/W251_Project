@@ -14,6 +14,7 @@ I used the spark setup provisioned for hw6. I had to install the following packa
 - freetype-devel
 - libpng
 - libpng-devel
+- six (reinstall a newer version)
 - scikit-image
 
 To run, create a file with a list of image files to be preprocessed ( *jpeg_files_sample.txt* contains the list of the sample image files). The output image file is saved in a directory called *preprocessed*.
