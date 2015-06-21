@@ -1,0 +1,10 @@
+../sample/10_left.jpeg
+../sample/10_right.jpeg
+../sample/13_left.jpeg
+../sample/13_right.jpeg
+../sample/15_left.jpeg
+../sample/15_right.jpeg
+../sample/16_left.jpeg
+../sample/16_right.jpeg
+../sample/17_left.jpeg
+../sample/17_right.jpeg
