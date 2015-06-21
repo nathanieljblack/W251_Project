@@ -14,6 +14,9 @@ I used the spark setup provisioned for hw6. I had to install the following packa
 - freetype-devel
 - libpng
 - libpng-devel
+- libjpeg
+- libjpeg-devel
+- Pillow (upgrade if already installed)
 - six (reinstall a newer version)
 - scikit-image
 
