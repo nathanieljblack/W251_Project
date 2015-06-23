@@ -36,7 +36,7 @@ out_dir = 'preprocessed'
 try:
     os.mkdir(out_dir)
 except OSError, e:
-    print e
+    pass
 
 IMAGE_SIZE = 256
 
