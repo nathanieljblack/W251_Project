@@ -2,6 +2,7 @@
 
 import sys
 import os
+from pyspark import SparkContext
 from PIL import Image
 import numpy as np
 
@@ -28,6 +29,7 @@ def crop(im):
     new_img = im[w:-w, h:-h, :]
     return new_img
 
+
 def resize_image(im, img_size):
     img = Image.fromarray(im)
     return img.resize((img_size, img_size))
@@ -36,13 +38,12 @@ out_dir = 'preprocessed'
 try:
     os.mkdir(out_dir)
 except OSError, e:
-    print e
+    pass 
 
 IMAGE_SIZE = 256
 
-for file in sys.stdin:
+def resize_image_file(file):
     file = file.strip()
-    #im = io.imread(file)
     im = Image.open(file)
     imarr = np.array(im)
     sq_im = make_square(imarr)
@@ -50,4 +51,21 @@ for file in sys.stdin:
     re_im = resize_image(cr_im, IMAGE_SIZE)
     outfile = out_dir + '/' + os.path.basename(file)
     re_im.save(outfile, 'JPEG')
-    sys.stdout.write("Success\t1\n")
+    return 1
+
+def main(image_files):
+    sc = SparkContext( appName="Resize Images")
+    sc.parallelize(image_files).map(resize_image_file).count()
+
+if __name__ == "__main__":
+    if len(sys.argv) < 2:
+        print "The program needs a filename which lists the image files"
+        exit()
+
+    file = sys.argv[1]
+    images = []
+    with open(file) as f:
+        for line in f:
+            images.append(line.strip())
+    main(images)
+
