@@ -42,7 +42,6 @@ IMAGE_SIZE = 256
 
 for file in sys.stdin:
     file = file.strip()
-    #im = io.imread(file)
     im = Image.open(file)
     imarr = np.array(im)
     sq_im = make_square(imarr)
@@ -50,4 +49,3 @@ for file in sys.stdin:
     re_im = resize_image(cr_im, IMAGE_SIZE)
     outfile = out_dir + '/' + os.path.basename(file)
     re_im.save(outfile, 'JPEG')
-    sys.stdout.write("Success\t1\n")
