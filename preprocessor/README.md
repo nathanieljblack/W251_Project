@@ -7,6 +7,7 @@ A simple preprocessor, *resize_mapper* takes in an image file, and resizes it in
 I used the spark setup provisioned for hw6. I had to install the following packages:
 - gcc
 - gcc-c++
+- python-devel
 - cython
 - scipy
 - numpy
