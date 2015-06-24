@@ -24,7 +24,7 @@ To run, create a file with a list of image files to be preprocessed (`jpeg_files
 
 This is a spark version of the same preprocessor as above. At this time, in order to run this, the following must be satistfied:
 - The repository is cloned at the home directory level on all the nodes
-- All the above packages need to be installed
+- All the above packages need to be installed on all the nodes
 
 Then, run the following:
 
