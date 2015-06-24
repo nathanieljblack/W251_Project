@@ -34,7 +34,7 @@ def resize_image(im, img_size):
     img = Image.fromarray(im)
     return img.resize((img_size, img_size))
 
-out_dir = 'preprocessed'
+out_dir = '/root/W251_Project/preprocessor/preprocessed'
 try:
     os.mkdir(out_dir)
 except OSError, e:
@@ -51,6 +51,7 @@ def resize_image_file(file):
     re_im = resize_image(cr_im, IMAGE_SIZE)
     outfile = out_dir + '/' + os.path.basename(file)
     re_im.save(outfile, 'JPEG')
+    print "writing", outfile
     return 1
 
 def main(image_files):
