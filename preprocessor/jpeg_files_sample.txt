@@ -1,0 +1,10 @@
+/root/W251_Project/sample/10_left.jpeg
+/root/W251_Project/sample/10_right.jpeg
+/root/W251_Project/sample/13_left.jpeg
+/root/W251_Project/sample/13_right.jpeg
+/root/W251_Project/sample/15_left.jpeg
+/root/W251_Project/sample/15_right.jpeg
+/root/W251_Project/sample/16_left.jpeg
+/root/W251_Project/sample/16_right.jpeg
+/root/W251_Project/sample/17_left.jpeg
+/root/W251_Project/sample/17_right.jpeg
