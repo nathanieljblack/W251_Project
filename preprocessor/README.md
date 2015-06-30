@@ -30,9 +30,9 @@ Then, run the following:
 
 ```
 cp /root/W251_Project/preprocessor/resize_spark_mapper.py ~
-cp /root/W251_Project/preprocessor/jpeg_files_sample.txt ~
 cd ~
-$SPARK_HOME/bin/spark-submit resize_spark_mapper.py jpeg_files_sample.txt
+$SPARK_HOME/bin/spark-submit resize_spark_mapper.py <test_or_train> <image_size> <directory_with_image_files>
 ```
         
-The preprocessed files will be saved at `/root/W251_Project/preprocessor/preprocessed`.
+The preprocessed files will be saved at `/root/W251_Project/preprocessor/<test_or_train>_<image_size>`.    
+This also generates a `<test_or_tran>_<image_size>.cpickle` file which contains the pickled version of the image files stored as an array.
