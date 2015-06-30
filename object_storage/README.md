@@ -11,3 +11,9 @@ Current data files:
 - train_32.zip: 32x32 jpeg image files
 - train_64.cpickle: pickled version of train jpeg files, reduced to 64x64, as an array of image arrays
 - train_64.zip: 64x64 jpeg image files
+- test_16.cpickle: pickled version of test jpeg files, reduced to 16x16, as an array of image arrays
+- test_16.zip: 16x16 jpeg image files
+- test_32.cpickle: pickled version of test jpeg files, reduced to 32x32, as an array of image arrays
+- test_32.zip: 32x32 jpeg image files
+- test_64.cpickle: pickled version of test jpeg files, reduced to 64x64, as an array of image arrays
+- test_64.zip: 64x64 jpeg image files
