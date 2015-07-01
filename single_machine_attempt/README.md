@@ -53,7 +53,7 @@ sys     0m17.781s
 root@master:~# 
 ```
 
-#16x16 
+#32x32
 
 ```
 root@master:~# top -b | python nb_sklearn.py
@@ -116,7 +116,7 @@ sys     1m4.569s
 ```
 
 
-#16x26
+#16x16
 Logistic Regression
 
 ```
