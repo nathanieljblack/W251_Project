@@ -1,7 +1,7 @@
 #!/bin/bash
 
 master=saltspark1
-minions=(saltspark1, saltspark2, saltspark3)
+minions=(saltspark1 saltspark2 saltspark3)
 
 # parse input arguments
 usage() { echo "Usage: $0 [-u <string> softlayer username] [-k <string> softlayer api key]" 1>&2; exit 1; }
@@ -63,5 +63,56 @@ salt-cloud -m /etc/salt/cloud.map -P -y
 # passwordless ssh
 ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
 
-# get private ips
+# get private ips and hostnames
 salt '*' network.interface_ip eth0 | sed 'N;s/\n\ \+/ /' > /etc/salt/roster
+
+mv /etc/salt/master /etc/salt/master~orig
+cat > /etc/salt/master <<EOF
+file_roots:
+  base:
+    - /srv/salt
+fileserver_backend:
+  - roots
+pillar_roots:
+  base:
+    - /srv/pillar
+EOF
+
+mkdir -p /srv/{salt,pillar} && service salt-master restart
+
+salt-ssh -i '*' cmd.run 'uname -a'
+
+cat > /srv/salt/top.sls <<EOF
+base:
+  '*':
+    - hosts
+    - root.ssh
+    - root.bash_profile
+EOF
+
+# create /srv/salt/hosts.sls
+cat > /srv/salt/hosts.sls <<EOF
+localhost-hosts-entry:
+  host.present:
+    - ip: 127.0.0.1
+    - names:
+      - localhost
+      - localhost.localdomain
+EOF
+IFS=$'\n'
+lines=""
+i=0
+for line in $(cat /etc/salt/roster) ; do
+  echo $line
+  echo hello
+  ((i++))
+  hostname=$(echo $line | awk -F": " '{print $1}')
+  privateip=$(echo $line | awk -F": " '{print $2}')
+  line1=$(printf "node$i-hosts-entry:")
+  line2=$(printf "  host.present:")
+  line3=$(printf "    - ip: $privateip")
+  line4=$(printf "    - names:")
+  line5=$(printf "      - $hostname")
+  lines=$(printf "${lines}\n${line1}\n${line2}\n${line3}\n${line4}\n${line5}")
+done
+printf "%s\n" "$lines"
