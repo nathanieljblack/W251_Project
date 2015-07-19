@@ -70,11 +70,20 @@ sl_centos7_small:
   image: CENTOS_7_64
   cpu_number: 1
   ram: 1024
-  disk_size: 25
+  disk_size:
+    - 25
+    - 100
   local_disk: True
   hourly_billing: True
   domain: w251final.net
   location: dal05
 EOF
+
+# install patch from jonathan's email to allow provisioning multiple disks
+git clone https://gist.github.com/517a92941181f8d2d3d1.git:patch
+yum install -y patch
+find /usr/ -wholename "*salt/cloud/clouds/softlayer.py"
+cd $(dirname $(!! | head -1))
+patch -p4 < ~/patch/gistfile1.diff
 
 END_OF_COMMANDS

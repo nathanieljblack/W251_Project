@@ -1,52 +1,20 @@
 #!/bin/bash
 
+# TODO
+# [] add command line argument for number of nodes
+
 master=saltspark1
 minions=(saltspark1 saltspark2 saltspark3)
 
-# parse input arguments
-usage() { echo "Usage: $0 [-u <string> softlayer username] [-k <string> softlayer api key]" 1>&2; exit 1; }
-
-while getopts ":u:k:" opt; do
-  case $opt in
-    u) user="$OPTARG"
-    ;;
-    k) key="$OPTARG"
-    ;;
-    *) usage
-    ;;
-  esac
-done
-shift $((OPTIND-1))
-
-if [ -z "${user}" ] || [ -z "${key}" ]; then
-    usage
-fi
-
-cat > /etc/salt/cloud.providers.d/softlayer.conf << EOF
-sl:
-  minion:
-    master: $public_ip
-  user: $user
-  apikey: $key
-  provider: softlayer
-  script: bootstrap-salt
-  script_args: -Z
-  delete_sshkeys: True
-  display_ssh_output: False
-  wait_for_ip_timeout: 1800
-  ssh_connect_timeout: 1200
-  wait_for_fun_timeout: 1200
-EOF
-
-cat /etc/salt/cloud.providers.d/softlayer.conf
-
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
-sl_centos7_small:
+small:
   provider: sl
   image: CENTOS_7_64
   cpu_number: 1
   ram: 1024
-  disk_size: 25
+  disk_size:
+    - 25
+    - 100
   local_disk: True
   hourly_billing: True
   domain: w251final.net
@@ -54,7 +22,7 @@ sl_centos7_small:
 EOF
 
 # create map file used to start multiple instances at once
-cat /dev/null >| /etc/salt/cloud.map
+echo "small:" > /etc/salt/cloud.map
 for minion in ${minions[@]}; do
     echo "  - ${minion}" >> /etc/salt/cloud.map
 done
@@ -62,12 +30,14 @@ salt-cloud -m /etc/salt/cloud.map -P -y
 
 # passwordless ssh
 ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
+export PUBLIC_KEY=`cat ~/.ssh/id_rsa.pub | cut -d ' ' -f 2`
 
-# get private ips and hostnames
+# get private ips and hostnames and store in roster
 salt '*' network.interface_ip eth0 | sed 'N;s/\n\ \+/ /' > /etc/salt/roster
 
+# configure salt states
 mv /etc/salt/master /etc/salt/master~orig
-cat > /etc/salt/master <<EOF
+cat > /etc/salt/master << EOF
 file_roots:
   base:
     - /srv/salt
@@ -80,9 +50,7 @@ EOF
 
 mkdir -p /srv/{salt,pillar} && service salt-master restart
 
-salt-ssh -i '*' cmd.run 'uname -a'
-
-cat > /srv/salt/top.sls <<EOF
+cat > /srv/salt/top.sls << EOF
 base:
   '*':
     - hosts
@@ -91,7 +59,7 @@ base:
 EOF
 
 # create /srv/salt/hosts.sls
-cat > /srv/salt/hosts.sls <<EOF
+cat > /srv/salt/hosts.sls << EOF
 localhost-hosts-entry:
   host.present:
     - ip: 127.0.0.1
@@ -102,9 +70,8 @@ EOF
 IFS=$'\n'
 lines=""
 i=0
+# iterate over hostnames and ips already stored in roster file
 for line in $(cat /etc/salt/roster) ; do
-  echo $line
-  echo hello
   ((i++))
   hostname=$(echo $line | awk -F": " '{print $1}')
   privateip=$(echo $line | awk -F": " '{print $2}')
@@ -115,4 +82,42 @@ for line in $(cat /etc/salt/roster) ; do
   line5=$(printf "      - $hostname")
   lines=$(printf "${lines}\n${line1}\n${line2}\n${line3}\n${line4}\n${line5}")
 done
-printf "%s\n" "$lines"
+printf "%s\n" "$lines" >> /srv/salt/hosts.sls
+# set field separator back to default
+IFS=$' \t\n'
+
+mkdir /srv/salt/root
+cat > /srv/salt/root/bash_profile << EOF
+# .bash_profile
+
+# Get the aliases and functions
+if [ -f ~/.bashrc ]; then
+  . ~/.bashrc
+fi
+
+# User specific environment and startup programs
+export PATH=$PATH:$HOME/bin
+# Java
+export JAVA_HOME="$(readlink -f $(which java) | grep -oP '.*(?=/bin)')"
+# Spark
+export SPARK_HOME="/usr/local/spark"
+export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+EOF
+
+cat > /srv/salt/root/bash_profile.sls << EOF
+/root/.bash_profile:
+  file.managed:
+    - source: salt://root/bash_profile
+    - overwrite: true
+EOF
+
+salt '*' state.highstate
+salt '*' cmd.run 'yum install -y java-1.8.0-openjdk-headless'
+salt '*' cmd.run "curl http://d3kbcqa49mib13.cloudfront.net/spark-1.3.1-bin-hadoop2.6.tgz | tar -zx -C /usr/local --show-transformed --transform='s,/*[^/]*,spark,'"
+
+cat /dev/null >| /tmp/slaves
+for minion in ${minions[@]}; do
+    echo "${minion}" >> /tmp/slaves
+done
+
+  salt-cp "$master" /tmp/slaves /usr/local/spark/conf
