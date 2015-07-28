@@ -30,7 +30,7 @@ if [ -z "${user}" ] || [ -z "${key}" ]; then
 fi
 
 # get details
-vs_hostname="salt7"
+vs_hostname="salt8"
 masterdetails=$(curl 'https://'"${user}"':'"${key}"'@api.softlayer.com/rest/v3/SoftLayer_Account/VirtualGuests.json?objectMask=id;fullyQualifiedDomainName;hostname;domain;primaryIpAddress;operatingSystem.passwords' | jq -r '.[] | select (.hostname == "'"${vs_hostname}"'") |{fullyQualifiedDomainName,id,root_password: .operatingSystem.passwords[] | select(.username == "root").password,primaryIpAddress}')
 root_pwd=$(echo $masterdetails | jq -r '.["root_password"]')
 public_ip=$(echo $masterdetails | jq -r '.["primaryIpAddress"]')
@@ -90,8 +90,10 @@ EOF
 # install patch from jonathan's email to allow provisioning multiple disks
 #git clone https://gist.github.com/517a92941181f8d2d3d1.git:patch
 yum install -y patch
-find /usr/ -wholename "*salt/cloud/clouds/softlayer.py"
-cd $(dirname $(!! | head -1))
+# find doesn't work over ssh?
+#find /usr/ -wholename "*salt/cloud/clouds/softlayer.py"
+#cd $(dirname $(!! | head -1))
+cd /usr/lib/python2.7/site-packages/salt/cloud/clouds
 patch -p4 < /tmp/softlayer.patch
 
 END_OF_COMMANDS
