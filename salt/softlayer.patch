@@ -1,0 +1,28 @@
+--- softlayer.py	2015-07-27 10:52:33.000000000 -0500
++++ ../../../../softlayer.py	2015-07-27 10:52:53.000000000 -0500
+@@ -31,6 +31,7 @@
+ # Import python libs
+ import logging
+ import time
++import collections
+ 
+ # Import salt cloud libs
+ import salt.utils.cloud
+@@ -271,10 +272,13 @@
+ 
+     if 'image' in vm_:
+         kwargs['operatingSystemReferenceCode'] = vm_['image']
+-        kwargs['blockDevices'] = [{
+-            'device': '0',
+-            'diskImage': {'capacity': vm_['disk_size']},
+-        }]
++        if isinstance(vm_['disk_size'], collections.Sequence):
++            kwargs['blockDevices'] = [ { 'device': num if num == 0 else num + 1, 'diskImage': { 'capacity': sz } } for num,sz in enumerate(vm_['disk_size']) ]
++        else:
++            kwargs['blockDevices'] = [{
++                'device': '0',
++                'diskImage': {'capacity': vm_['disk_size']},
++            }]
+     elif 'global_identifier' in vm_:
+         kwargs['blockDeviceTemplateGroup'] = {
+             'globalIdentifier': vm_['global_identifier']

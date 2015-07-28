@@ -3,8 +3,8 @@
 # TODO
 # [] add command line argument for number of nodes
 
-master=saltspark1
-minions=(saltspark1 saltspark2 saltspark3)
+master=saltspark26
+minions=(saltspark26 saltspark27)
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 small:
@@ -28,10 +28,6 @@ for minion in ${minions[@]}; do
 done
 salt-cloud -m /etc/salt/cloud.map -P -y
 
-# passwordless ssh
-ssh-keygen -t rsa -N "" -f ~/.ssh/id_rsa
-export PUBLIC_KEY=`cat ~/.ssh/id_rsa.pub | cut -d ' ' -f 2`
-
 # get private ips and hostnames and store in roster
 salt '*' network.interface_ip eth0 | sed 'N;s/\n\ \+/ /' > /etc/salt/roster
 
@@ -50,12 +46,13 @@ EOF
 
 mkdir -p /srv/{salt,pillar} && service salt-master restart
 
-cat > /srv/salt/top.sls << EOF
+cat > /srv/salt/top.sls <<EOF
 base:
   '*':
     - hosts
     - root.ssh
     - root.bash_profile
+    - provision_hdfs  
 EOF
 
 # create /srv/salt/hosts.sls
@@ -87,6 +84,22 @@ printf "%s\n" "$lines" >> /srv/salt/hosts.sls
 IFS=$' \t\n'
 
 mkdir /srv/salt/root
+
+# set up passwordless ssh
+ssh-keygen -N '' -f /tmp/id_rsa
+export PUBLIC_KEY=`cat /tmp/id_rsa.pub | cut -d ' ' -f 2`
+salt-cp "$master" /tmp/id_rsa ~/.ssh/id_rsa
+salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_rsa.pub
+salt "$master" cmd.run "chmod 400 ~/.ssh/id_rsa"
+
+cat > /srv/salt/root/ssh.sls <<EOF
+$PUBLIC_KEY:
+  ssh_auth.present:
+    - user: root
+    - enc: ssh-rsa
+    - comment: root@$master
+EOF
+
 cat > /srv/salt/root/bash_profile << EOF
 # .bash_profile
 
@@ -120,4 +133,7 @@ for minion in ${minions[@]}; do
     echo "${minion}" >> /tmp/slaves
 done
 
-  salt-cp "$master" /tmp/slaves /usr/local/spark/conf
+salt-cp "$master" /tmp/slaves /usr/local/spark/conf
+
+salt "$master" cmd.run "/usr/local/spark/sbin/start-master.sh"
+salt "$master" cmd.run "/usr/local/spark/sbin/start-slaves.sh"
