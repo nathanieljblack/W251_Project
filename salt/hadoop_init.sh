@@ -1,5 +1,11 @@
-master=saltspark26
-minions=(saltspark26 saltspark27)
+master=saltspark28
+minions=(saltspark28 saltspark29)
+
+echo "sl_centos7_small:" > /etc/salt/cloud.map
+for minion in ${minions[@]}; do
+    echo "  - ${minion}" >> /etc/salt/cloud.map
+done
+salt-cloud -m /etc/salt/cloud.map -P -y
 
 mkdir -p /srv/formulas
 cd /srv/formulas
@@ -48,19 +54,19 @@ hdfs_data_disks:
   - /data
 EOF
 
-cat > /tmp/salt/minion
-
 for minion in ${minions[@]}; do
     salt-cp "$minion" /tmp/minion_grains /etc/salt/grains
     salt-cp "$minion" /tmp/mine_functions.conf /etc/salt/minion.d/mine_functions.conf
+    # not sure if the following is necessary yet...
+    # fqdn="$minion"".w251final.net"
+    # salt "$minion" cmd.run "echo -e 'id: $fqdn' > /etc/salt/minion.d/local.conf"
+    # salt "$minion" service.restart "salt-minion"
+    # salt-key -y -a $fqdn && salt-key -y -d $minion
 done
 
 cat > /tmp/master_grains <<EOF
 roles:
   - hadoop_master
-  - hadoop_slave
-hdfs_data_disks:
-  - /data
 EOF
 
 salt-cp "$master" /tmp/master_grains /etc/salt/grains
@@ -93,6 +99,7 @@ base:
     - root.ssh
     - root.bash_profile
     - provision_hdfs
+    - provision_hadoop
     - hadoop
     - hadoop.hdfs
 EOF
@@ -121,45 +128,21 @@ hadoop_services:
       - hadoop.hdfs
 EOF
 
+cat > /srv/pillar/top.sls <<EOF
+base:
+  'G@roles:hadoop_slave or G@roles:hadoop_master':
+    - hadoop
+EOF
+
+cat > /srv/pillar/hadoop.sls <<EOF
+hadoop:
+  version: hdp-1.6.0
+  users:
+    hadoop: 6000
+    hdfs: 6001
+EOF
+
+# for some reason, need to manually generate keys
+/srv/formulas/hadoop-formula/hadoop/files/generate_keypairs.sh
+
 salt-run state.orchestrate orchestration.provision_hadoop
-
-# cat > /srv/pillar/top.sls <<EOF
-# hadoop:
-#   version: apache-1.2.1 # ['apache-1.2.1', 'apache-2.2.0', 'hdp-1.3.0', 'hdp-2.2.0', 'cdh-4.5.0', 'cdh-4.5.0-mr1']
-#   targeting_method: grain # [compound, glob] also supported
-#   users:
-#     hadoop: 6000
-#     hdfs: 6001
-#   config:
-#     directory: /etc/hadoop/conf
-#     core-site:
-#       io.native.lib.available:
-#         value: true
-#       io.file.buffer.size:
-#         value: 65536
-#       fs.trash.interval:
-#         value: 60
-#
-# hdfs:
-#   namenode_target: "roles:hadoop_master" # Specify compound matching string to match all your namenodes
-#   datanode_target: "roles:hadoop_slave" # Specify compound matching string to match all your datanodes e.g. if you were to use pillar I@datanode:true
-#   config:
-#     namenode_port: 8020
-#     namenode_http_port: 50070
-#     secondarynamenode_http_port: 50090
-#     # the number of hdfs replicas is normally auto-configured for you in hdfs.settings
-#     # according to the number of available datanodes
-#     # replication: 1
-#     hdfs-site:
-#       dfs.permission:
-#         value: false
-#       dfs.durable.sync:
-#         value: true
-#       dfs.datanode.synconclose:
-#         value: true
-# EOF
-
-# [] download github formulas
-# [] edit /etc/salt/master
-#service salt-master restart
-# [] add roles hadoop_master and hadoop_slave to /etc/salt/grains
