@@ -4,8 +4,8 @@
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
 
-master=saltspark34
-minions=(saltspark34 saltspark35)
+master=saltspark36
+minions=(saltspark36 saltspark37)
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 small:
@@ -86,11 +86,12 @@ IFS=$' \t\n'
 mkdir /srv/salt/root
 
 # set up passwordless ssh
-ssh-keygen -N '' -f /tmp/id_rsa
-export PUBLIC_KEY=`cat /tmp/id_rsa.pub | cut -d ' ' -f 2`
-# salt-cp "$master" /tmp/id_rsa ~/.ssh/id_rsa
-# salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_rsa.pub
-# salt "$master" cmd.run "chmod 400 ~/.ssh/id_rsa"
+ssh-keygen -y -N '' -f /tmp/id_dsa
+export PUBLIC_KEY=`cat /tmp/id_dsa.pub | cut -d ' ' -f 2`
+salt-cp "$master" /tmp/id_rsa ~/.ssh/id_dsa
+salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_dsa.pub
+salt '*' test.sleep 10
+salt "$master" cmd.run "chmod 400 ~/.ssh/id_dsa"
 
 cat > /srv/salt/root/ssh.sls <<EOF
 $PUBLIC_KEY:
