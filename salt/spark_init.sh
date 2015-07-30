@@ -86,12 +86,12 @@ IFS=$' \t\n'
 mkdir /srv/salt/root
 
 # set up passwordless ssh
-ssh-keygen -N '' -f /tmp/id_dsa
-export PUBLIC_KEY=`cat /tmp/id_dsa.pub | cut -d ' ' -f 2`
-salt-cp "$master" /tmp/id_rsa ~/.ssh/id_dsa
-salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_dsa.pub
+ssh-keygen -N '' -f /tmp/id_rsa
+export PUBLIC_KEY=`cat /tmp/id_rsa.pub | cut -d ' ' -f 2`
+salt-cp "$master" /tmp/id_rsa ~/.ssh/id_rsa
+salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_rsa.pub
 salt '*' test.sleep 10
-salt "$master" cmd.run "chmod 400 ~/.ssh/id_dsa"
+salt "$master" cmd.run "chmod 400 ~/.ssh/id_rsa"
 
 cat > /srv/salt/root/ssh.sls <<EOF
 $PUBLIC_KEY:
