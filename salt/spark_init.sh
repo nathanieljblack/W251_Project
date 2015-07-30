@@ -4,8 +4,8 @@
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
 
-master=saltspark36
-minions=(saltspark36 saltspark37)
+master=saltspark40
+minions=(saltspark40 saltspark41)
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 small:
@@ -30,6 +30,8 @@ done
 salt-cloud -m /etc/salt/cloud.map -P -y
 
 # get private ips and hostnames and store in roster
+# !! don't need roster file, should look at minions to determine which
+# machines to put in hosts file below
 salt '*' network.interface_ip eth0 | sed 'N;s/\n\ \+/ /' > /etc/salt/roster
 
 # configure salt states
@@ -83,15 +85,15 @@ printf "%s\n" "$lines" >> /srv/salt/hosts.sls
 # set field separator back to default
 IFS=$' \t\n'
 
-mkdir /srv/salt/root
-
 # set up passwordless ssh
 ssh-keygen -N '' -f /tmp/id_rsa
 export PUBLIC_KEY=`cat /tmp/id_rsa.pub | cut -d ' ' -f 2`
+salt "$master" cmd.run "mkdir ~/.ssh"
 salt-cp "$master" /tmp/id_rsa ~/.ssh/id_rsa
 salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_rsa.pub
-salt '*' test.sleep 10
 salt "$master" cmd.run "chmod 400 ~/.ssh/id_rsa"
+
+mkdir /srv/salt/root
 
 cat > /srv/salt/root/ssh.sls <<EOF
 $PUBLIC_KEY:
