@@ -4,8 +4,8 @@
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
 
-master=saltspark26
-minions=(saltspark26 saltspark27)
+master=saltspark32
+minions=(saltspark32 saltspark33)
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 small:
@@ -51,9 +51,7 @@ cat > /srv/salt/top.sls <<EOF
 base:
   '*':
     - hosts
-    - root.ssh
     - root.bash_profile
-    - provision_hdfs
 EOF
 
 # create /srv/salt/hosts.sls
@@ -93,15 +91,7 @@ salt-cp "$master" /tmp/id_rsa ~/.ssh/id_rsa
 salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_rsa.pub
 salt "$master" cmd.run "chmod 400 ~/.ssh/id_rsa"
 
-cat > /srv/salt/root/ssh.sls <<EOF
-$PUBLIC_KEY:
-  ssh_auth.present:
-    - user: root
-    - enc: ssh-rsa
-    - comment: root@$master
-EOF
-
-cat > /srv/salt/root/bash_profile << EOF
+cat > /srv/salt/root/bash_profile <<EOF
 # .bash_profile
 
 # Get the aliases and functions
