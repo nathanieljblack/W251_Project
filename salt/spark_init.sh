@@ -2,6 +2,7 @@
 
 # TODO
 # [] add command line argument for number of nodes
+# git clone repo to get files on saltmaster
 
 master=saltspark26
 minions=(saltspark26 saltspark27)
@@ -52,7 +53,7 @@ base:
     - hosts
     - root.ssh
     - root.bash_profile
-    - provision_hdfs  
+    - provision_hdfs
 EOF
 
 # create /srv/salt/hosts.sls
@@ -126,7 +127,7 @@ EOF
 
 salt '*' state.highstate
 salt '*' cmd.run 'yum install -y java-1.8.0-openjdk-headless'
-salt '*' cmd.run "curl http://d3kbcqa49mib13.cloudfront.net/spark-1.3.1-bin-hadoop2.6.tgz | tar -zx -C /usr/local --show-transformed --transform='s,/*[^/]*,spark,'"
+salt '*' cmd.run "curl http://d3kbcqa49mib13.cloudfront.net/spark-1.4.0-bin-hadoop2.6.tgz | tar -zx -C /usr/local --show-transformed --transform='s,/*[^/]*,spark,'"
 
 cat /dev/null >| /tmp/slaves
 for minion in ${minions[@]}; do
