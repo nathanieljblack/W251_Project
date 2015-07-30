@@ -4,8 +4,8 @@
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
 
-master=saltspark40
-minions=(saltspark40 saltspark41)
+master=saltspark46
+minions=(saltspark46 saltspark47)
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 small:
@@ -86,14 +86,22 @@ printf "%s\n" "$lines" >> /srv/salt/hosts.sls
 IFS=$' \t\n'
 
 # set up passwordless ssh
-ssh-keygen -N '' -f /tmp/id_rsa
-export PUBLIC_KEY=`cat /tmp/id_rsa.pub | cut -d ' ' -f 2`
-salt "$master" cmd.run "mkdir ~/.ssh"
-salt-cp "$master" /tmp/id_rsa ~/.ssh/id_rsa
-salt-cp "$master" /tmp/id_rsa.pub ~/.ssh/id_rsa.pub
-salt "$master" cmd.run "chmod 400 ~/.ssh/id_rsa"
+mkdir /srv/salt/sshkeys
+ssh-keygen -N '' -f /srv/salt/sshkeys/id_rsa
+export PUBLIC_KEY=`cat /srv/salt/sshkeys/id_rsa.pub | cut -d ' ' -f 2`
+#sudo salt-cp "$master" /tmp/id_rsa /root/.ssh/id_rsa
+#sudo salt-cp "$master" /tmp/id_rsa.pub /root/.ssh/id_rsa.pub
 
-mkdir /srv/salt/root
+cat > /srv/salt/copyfiles.sls <<EOF
+/root/.ssh:
+  file.recurse:
+    - source: salt://sshkeys
+    - user: root
+    - group: root
+EOF
+
+salt "$master" state.sls copyfiles
+salt "$master" cmd.run "chmod 400 /root/.ssh/id_rsa"
 
 cat > /srv/salt/root/ssh.sls <<EOF
 $PUBLIC_KEY:
@@ -113,9 +121,8 @@ fi
 
 # User specific environment and startup programs
 export PATH=$PATH:$HOME/bin
-# Java
-export JAVA_HOME="$(readlink -f $(which java) | grep -oP '.*(?=/bin)')"
-# Spark
+#export JAVA_HOME="$(readlink -f $(which java) | grep -oP '.*(?=/bin)')"
+export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.51-1.b16.el7_1.x86_64/jre"
 export SPARK_HOME="/usr/local/spark"
 export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
 EOF
