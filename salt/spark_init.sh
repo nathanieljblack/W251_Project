@@ -4,12 +4,13 @@
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
 
-master=saltspark46
-minions=(saltspark46 saltspark47)
+master=saltspark79
+minions=(saltspark79 saltspark80)
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 small:
   provider: sl
+  script_args: -D git v2015.8
   image: CENTOS_7_64
   cpu_number: 1
   ram: 1024
