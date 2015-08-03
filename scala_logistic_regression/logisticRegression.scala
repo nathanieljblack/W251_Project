@@ -12,14 +12,24 @@ import java.io._
 
 object LogisticRegression {
   	def main(args: Array[String]) {
+		if (args.size < 3) {
+			println("Usage: LogisticRegression <train.csv> <test.csv> <pred_out_file")
+			System.exit(0)
+		}
 		val sparkConf = new SparkConf().setAppName("LogisticRegression")
 		val sc = new SparkContext(sparkConf)
+
+		val in_train = args(0)
+                val in_test = args(1)
+                val pred_out = args(2)
 
 		// Load training and test data CSV
 		// Convert data to Double and make tuples- (Label, First N-1 values)
 
-		val rawTrain = sc.textFile("/root/trainData128.txt")
-		val rawTest = sc.textFile("/root/testData128.txt")
+		//val rawTrain = sc.textFile("hdfs://sp1:9000/logisticregression/train_16.csv")
+		//val rawTest = sc.textFile("hdfs://sp1:9000/logisticregression/test_16.csv")
+		val rawTrain = sc.textFile(in_train)
+		val rawTest = sc.textFile(in_test)
 
 		val trainData = rawTrain.map(x => x.split(",")).
 						map(x => x.map(_.toDouble)).
@@ -53,7 +63,7 @@ object LogisticRegression {
 		val out = testPredictions.collect()
 
 		//Print the results to one file (saveAsText writes to pieces across cluster so this is easier to work with)
-		val pw = new PrintWriter(new File("/root/out128.txt"))
+		val pw = new PrintWriter(new File(pred_out))
 		for (i<-out){
 			 pw.write(i._1.toString + "\t" + i._2.toString + "\n")
 		}
@@ -73,7 +83,7 @@ object LogisticRegression {
 		println(confusionMatrix)
 
 		// Save model
-		model.save(sc, "/root/logisticRegression128model")
+		//model.save(sc, "/home/hadoop/logisticRegression128model")
 
 	}
 }
