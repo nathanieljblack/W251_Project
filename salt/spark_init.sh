@@ -4,8 +4,8 @@
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
 
-master=saltspark91
-minions=(saltspark91 saltspark92)
+master=saltspark97
+minions=(saltspark97 saltspark98)
 domain=w251final.net
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf <<EOF
@@ -103,6 +103,7 @@ EOF
 # EOF
 #
 # salt '*' state.sls hosts_prep
+sleep 30
 i=0
 for minion in ${minions[@]}; do
     ((i++))
