@@ -216,6 +216,6 @@
       - {source: "logisticregression.scala", dest: "/home/hadoop"}
      tags: sbt_build
 
-   - name: Build SBT project 
-     command: su - hadoop -c "sbt assembly"
-     tags: sbt_build
+   #- name: Build SBT project 
+   #  command: su - hadoop -c "sbt assembly"
+   #  tags: sbt_build
