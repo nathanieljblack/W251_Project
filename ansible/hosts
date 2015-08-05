@@ -1,0 +1,9 @@
+[local]
+localhost ansible_connection=local
+
+[cluster]
+169.54.251.27 ansible_connection=ssh ansible_ssh_user=root
+169.54.251.24 ansible_connection=ssh ansible_ssh_user=root
+
+[master]
+169.54.251.27 ansible_connection=ssh ansible_ssh_user=root

@@ -1,0 +1,221 @@
+- hosts: cluster
+  vars:
+    image_size: "{{ IMAGE_SIZE|default(16) }}"
+  tasks:
+   - name: Install JDK/JRE
+     apt: pkg={{item}} state=latest install_recommends=no
+     with_items:
+      - default-jdk
+      - default-jre
+     tags: dependencies
+
+   - name: Download SBT
+     get_url: url=http://dl.bintray.com/sbt/debian/sbt-0.13.5.deb dest=/tmp/sbt-0.13.5.deb mode=0644
+     tags: dependencies
+
+   - name: Install SBT
+     apt: deb=/tmp/sbt-0.13.5.deb state=installed 
+     tags: dependencies
+
+   - name: Update Packages
+     apt: upgrade=dist
+     tags: dependencies
+
+   - name: Numpy/Scipy -- Install using apt.
+     sudo: yes
+     apt: pkg={{ item }} state=latest
+     with_items:
+      - python-numpy
+      - python-scipy
+      - libblas-dev
+      - liblapack-dev
+      - build-essential
+      - python-pip 
+      - python-dev 
+      - gfortran-4.4
+      - git
+     tags: dependencies
+
+   - name: Download tarballs for Spark/Hadoop
+     get_url: url={{item}} dest=/root/
+     with_items:
+      - http://d3kbcqa49mib13.cloudfront.net/spark-1.4.0-bin-hadoop2.6.tgz
+      - http://apache.claz.org/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz
+     tags: download
+
+   - name: Unpack
+     unarchive: src=/root/{{item}} dest=/root copy=no
+     with_items:
+      - spark-1.4.0-bin-hadoop2.6.tgz
+      - hadoop-2.6.0.tar.gz
+     tags: download
+
+   - name: Rename and Move
+     command: mv /root/{{item.a}} /usr/local/{{item.b}}
+     with_items:
+      - { a: 'spark-1.4.0-bin-hadoop2.6',    b: 'spark'}
+      - { a: 'hadoop-2.6.0',    b: 'hadoop'}
+     tags: download
+
+   - name: Create Hadoop group
+     group: name=hadoop state=present
+
+   - name: Create Hadoop user
+     user: name=hadoop comment="User for Hadoop services" shell=/bin/bash group=hadoop groups=sudo state=present
+
+   - name: Mount disk
+     filesystem: fstype=ext4 dev=/dev/xvdc
+     tags: mount
+
+   - name: Creates data directory
+     mount: name=/data src=/dev/xvdc fstype=ext4 state=mounted
+     tags: mount
+
+   - name: Java Bash
+     shell: echo export JAVA_HOME=\"$(readlink -f $(which java) | grep -oP '.*(?=/bin)')\" >> {{item}}/.bash_profile
+     with_items:
+      - /root
+      - /home/hadoop
+     tags: bash
+
+   - name: Update Bash
+     shell: echo export {{item.a}} >> {{item.b}}/.bash_profile
+     with_items:
+      - { a: 'SPARK_HOME=\"/usr/local/spark\"',    b: '/root'}
+      - { a: 'SPARK_HOME=\"/usr/local/spark\"',    b: '/home/hadoop'}
+      - { a: 'export PATH=/usr/local/scala/bin:$PATH',    b: '/root'}
+      - { a: 'export PATH=/usr/local/scala/bin:$PATH',    b: '/home/hadoop'}
+      - { a: 'export PATH=/usr/local/spark/bin:$PATH',    b: '/root'}
+      - { a: 'export PATH=/usr/local/spark/bin:$PATH',    b: '/home/hadoop'}
+      - { a: 'export PATH=/usr/local/hadoop/bin:$PATH',    b: '/root'}
+      - { a: 'export PATH=/usr/local/hadoop/bin:$PATH',    b: '/home/hadoop'}
+     tags: bash
+
+   - name: Source Bash
+     shell: . {{item}}/.bash_profile
+     with_items:
+      - /root
+      - /home/hadoop
+     tags: bash
+
+   - name: etc/hosts file
+     template: src=./local/etc_hosts dest=/etc/hosts
+     tags: hosts
+
+   - name: Create hadoop user .ssh directory
+     file: dest=/home/hadoop/.ssh mode=0755 owner=hadoop state=directory
+     sudo: yes
+     tags: ssh
+
+   - name: hadoop private key
+     template: src=local/id_rsa_hadoop dest=/home/hadoop/.ssh/id_rsa mode=0600
+     sudo: yes
+     sudo_user: hadoop
+     tags: ssh
+
+   - name: hadoop pub key
+     template: src=local/id_rsa_hadoop.pub dest=/home/hadoop/.ssh/id_rsa.pub mode=0644
+     sudo: yes
+     sudo_user: hadoop
+     tags: ssh
+
+   - name: Setup | authorized key upload
+     authorized_key: user=hadoop
+      key="{{ lookup('file', './local/id_rsa_hadoop.pub') }}"
+      path='/home/hadoop/.ssh/authorized_keys'
+      manage_dir=no
+     sudo: true
+     tags: ssh
+
+   - name: root private key
+     template: src=local/id_rsa_hadoop dest=~/.ssh/id_rsa mode=0600
+     sudo: yes
+     sudo_user: root
+     tags: ssh
+
+   - name: root public key
+     template: src=local/id_rsa_hadoop.pub dest=~/.ssh/id_rsa.pub mode=0644
+     sudo: yes
+     sudo_user: root
+     tags: ssh
+
+   - name: Setup | authorized key upload
+     authorized_key: user=root
+      key="{{ lookup('file', './local/id_rsa_hadoop.pub') }}"
+      path='~/.ssh/authorized_keys'
+      manage_dir=no
+     sudo: true
+     tags: ssh
+
+   - name: Cat authorized_keys
+     shell: cat {{item}}/.ssh/id_rsa.pub >> {{item}}/.ssh/authorized_keys
+     with_items:
+      - /root
+      - /home/hadoop
+     tags: ssh
+
+   - name: hadoop-env.sh file
+     lineinfile: dest=/usr/local/hadoop/etc/hadoop/{{item}} line="export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/jre"
+     with_items:
+      - hadoop-env.sh
+      - yarn-env.sh   
+     tags: hadoop
+
+   - name: hadoop .profile 
+     shell: echo 'export PATH=$PATH:/usr/local/hadoop/bin' >> /home/hadoop/.profile
+     tags: hadoop
+
+   - name: Hadoop Files
+     template: src=hadoop/{{item}} dest=/usr/local/hadoop/etc/hadoop/
+     with_items:
+      - master.conf
+      - slaves.conf
+      - core-site.xml
+      - mapred-site.xml
+      - hdfs-site.xml
+      - yarn-site.xml
+     tags: hadoop
+
+   - name: Log4j
+     template: src=hadoop/log4j.properties dest=/usr/local/spark/conf
+     tags: spark
+
+     tags: hadoop
+   - name: Change permission for hadoop /data
+     file: path={{item}} owner=hadoop recurse=yes state=directory
+     with_items:
+      - /data
+      - /usr/local/hadoop
+      - /usr/local/spark
+     tags: hadoop
+
+   - name: Upload get_data.sh
+     template: src=./local/get_data.sh dest=/home/hadoop mode=0755
+     tags: get_data
+
+   - name: Get the {{ image_size }} x {{ image_size }} data
+     shell: bash get_data.sh {{ image_size }} chdir=/home/hadoop
+     tags: get_data
+
+- hosts: master
+  tasks:
+   - name: Spark Slaves
+     template: src=hadoop/slaves.conf dest=/usr/local/spark/conf/slaves
+     tags: spark
+
+   - name: Create SBT project 
+     file: dest=/home/hadoop/project mode=0755 owner=hadoop state=directory
+     sudo: yes
+     tags: sbt_build
+
+   - name: Copy build.sbt/assembly.sbt/logisticregression.scala
+     template: src=./sbt/{{item.source}} dest={{item.dest}} owner=hadoop mode=0755
+     with_items:
+      - {source: "build.sbt", dest: "/home/hadoop"}
+      - {source: "assembly.sbt", dest: "/home/hadoop/project"}
+      - {source: "logisticregression.scala", dest: "/home/hadoop"}
+     tags: sbt_build
+
+   - name: Build SBT project 
+     command: su - hadoop -c "sbt assembly"
+     tags: sbt_build
