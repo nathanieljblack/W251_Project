@@ -1,12 +1,18 @@
 #Ansible Playbook for Spark and Hadoop
 
-##Download Ansible (on Ubuntu)
+##Download Ansible 
+- Ubuntu
 
 ```
 $ sudo apt-get install software-properties-common
 $ sudo apt-add-repository ppa:ansible/ansible
 $ sudo apt-get update
 $ sudo apt-get install ansible
+```
+- Mac
+
+```
+$ pip install ansible
 ```
 
 ##Set up
@@ -22,7 +28,7 @@ slcli sshkey list
 Change ``config.json`` to the desired VM setup.
 
 ###RSA Keys
-Create an RSA Public/Private pair and save them as ``id_rsa_hadoop`` and ``id_rsa_hadoop.pub`` in the ``/local`` folder
+Create an RSA Public/Private pair and save them as ``id_rsa_hadoop`` and ``id_rsa_hadoop.pub`` in the ``./local`` folder
 
 ###Hosts
 
