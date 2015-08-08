@@ -194,11 +194,7 @@
      tags: get_data
 
    - name: Get the data
-     shell: bash get_data.sh {{ item }} chdir=/home/hadoop
-     with_items:
-      - {{ image_size }}
-      - 128
-      - 256
+     shell: bash get_data.sh {{ image_size }} chdir=/home/hadoop
      tags: get_data
 
 - hosts: master
