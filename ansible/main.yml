@@ -193,8 +193,12 @@
      template: src=./local/get_data.sh dest=/home/hadoop mode=0755
      tags: get_data
 
-   - name: Get the {{ image_size }} x {{ image_size }} data
-     shell: bash get_data.sh {{ image_size }} chdir=/home/hadoop
+   - name: Get the data
+     shell: bash get_data.sh {{ item }} chdir=/home/hadoop
+     with_items:
+      - {{ image_size }}
+      - 128
+      - 256
      tags: get_data
 
 - hosts: master
