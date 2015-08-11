@@ -26,7 +26,7 @@ salt-cloud -m /etc/salt/cloud.map -P -y
 
 rm -rf /srv/{salt,pillar} && mkdir -p /srv/{salt,pillar}
 
-salt '*minion* and *master*' service.restart "salt-minion"
+salt -C '*minion* or *master*' service.restart "salt-minion"
 service salt-master restart
 sleep 15
 
