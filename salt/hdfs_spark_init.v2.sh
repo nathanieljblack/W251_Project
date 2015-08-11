@@ -1,5 +1,5 @@
-master=master7
-minions=($master minion13 minion14)
+master=master8
+minions=($master minion15 minion16 minion17)
 domain=w251final.net
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf <<EOF
@@ -26,10 +26,12 @@ salt-cloud -m /etc/salt/cloud.map -P -y
 
 rm -rf /srv/{salt,pillar} && mkdir -p /srv/{salt,pillar}
 
+salt '*minion* and *master*' service.restart "salt-minion"
 service salt-master restart
 sleep 15
 
 cat > /srv/salt/install_hadoop.sh <<EOF
+yum install -y java-1.6.0-openjdk*
 yum install -y java-1.8.0-openjdk-headless
 curl http://d3kbcqa49mib13.cloudfront.net/spark-1.4.0-bin-hadoop2.6.tgz | tar -zx -C /usr/local --show-transformed --transform='s,/*[^/]*,spark,'
 wget http://apache.claz.org/hadoop/core/hadoop-2.6.0/hadoop-2.6.0.tar.gz
@@ -67,17 +69,19 @@ include:
     - group: root
     - mode: 500
 
+install_hadoop:
+  cmd.run:
+    - name: /tmp/install_hadoop.sh
+    - cwd: /usr/local
+    - unless:
+      - ls /usr/local/hadoop
+
 /tmp/mountfs.sh:
   file.managed:
     - source: salt://mountfs.sh
     - user: root
     - group: root
     - mode: 500
-
-install_hadoop:
-  cmd.run:
-    - name: /tmp/install_hadoop.sh
-    - cwd: /usr/local
 
 makefs:
   cmd.run:
@@ -125,7 +129,7 @@ i=0
 cat /dev/null > /srv/salt/hosts.sls
 for minion in ${minions[@]}; do
     ((i++))
-    privateip=$(salt "$minion" network.interface_ip eth0 | sed -n 2p)
+    privateip=$(salt -t 60 "$minion" network.interface_ip eth0 | sed -n 2p)
     cat >> /srv/salt/hosts.sls <<EOF
 node$i-hosts-entry:
   host.present:
@@ -136,9 +140,9 @@ EOF
 done
 
 # set up passwordless ssh for root and hadoop users
-mkdir -p /srv/salt/{root,hadoop}/sshkeys
-ssh-keygen -N '' -f /srv/salt/root/sshkeys/id_rsa
-ssh-keygen -N '' -f /srv/salt/hadoop/sshkeys/id_rsa
+# only create the keys if the directory doesn't exist
+mkdir /srv/salt/{root,hadoop}
+mkdir /srv/salt/{root,hadoop}/sshkeys && ssh-keygen -N '' -f /srv/salt/root/sshkeys/id_rsa && ssh-keygen -N '' -f /srv/salt/hadoop/sshkeys/id_rsa
 export ROOT_PK=`cat /srv/salt/root/sshkeys/id_rsa.pub | cut -d ' ' -f 2`
 export HADOOP_PK=`cat /srv/salt/hadoop/sshkeys/id_rsa.pub | cut -d ' ' -f 2`
 
@@ -175,7 +179,7 @@ $HADOOP_PK:
 
 /home/hadoop/.ssh:
   file.recurse:
-    - source: salt://root/sshkeys
+    - source: salt://hadoop/sshkeys
     - user: hadoop
     - group: hadoop
 
@@ -197,11 +201,10 @@ if [ -f ~/.bashrc ]; then
 fi
 
 # User specific environment and startup programs
-export PATH=$PATH:/usr/local/hadoop/bin
 #export JAVA_HOME="$(readlink -f $(which java) | grep -oP '.*(?=/bin)')"
-export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.51-1.b16.el7_1.x86_64/jre"
-export SPARK_HOME="/usr/local/spark"
-export PATH=$PATH:$SPARK_HOME/bin:$SPARK_HOME/sbin
+export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.51-1.b16.el7_1.x86_64/jre
+export SPARK_HOME=/usr/local/spark
+export PATH=$PATH:$HOME/bin:/usr/local/hadoop/bin:/usr/local/spark/bin:/usr/local/spark/sbin
 EOF
 
 cat > /srv/salt/bash_profile.sls <<EOF
@@ -249,10 +252,6 @@ cat > /srv/salt/core-site.xml <<EOF
 </configuration>
 EOF
 
-cat > /srv/salt/hadoop-env.xml <<EOF
-export JAVA_HOME="/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.51-1.b16.el7_1.x86_64/jre"
-EOF
-
 cat > /srv/salt/hdfs-site.xml <<EOF
 <?xml version="1.0" encoding="UTF-8"?>
 <?xml-stylesheet type="text/xsl" href="configuration.xsl"?>
@@ -279,24 +278,28 @@ include:
     - require:
       - sls: provision_hdfs
 
-/usr/local/hadoop/etc/hadoop/hadoop-env.xml:
-  file.managed:
-    - source: salt://hadoop-env.xml
-    - overwrite: true
-    - require:
-      - sls: provision_hdfs
-
 /usr/local/hadoop/etc/hadoop/hdfs-site.xml:
   file.managed:
     - source: salt://hdfs-site.xml
     - overwrite: true
     - require:
       - sls: provision_hdfs
+
+/usr/local/hadoop/etc/hadoop/hadoop-env.sh:
+  file.append:
+    - text:
+      - "export JAVA_HOME=/usr/lib/jvm/java-1.8.0-openjdk-1.8.0.51-1.b16.el7_1.x86_64/jre"
 EOF
 
 cat > /srv/salt/start_master.sh <<EOF
 source ~/.bash_profile
+/usr/local/hadoop/sbin/stop-all.sh
+jps | grep "NameNode" | cut -d " " -f 1 | xargs kill
+sleep 10
+hadoop namenode -y -format
 /usr/local/hadoop/sbin/hadoop-daemon.sh --config /usr/local/hadoop/etc/hadoop --script hdfs start namenode
+
+/usr/local/spark/sbin/stop-all.sh
 /usr/local/spark/sbin/start-master.sh
 /usr/local/spark/sbin/start-slaves.sh
 EOF
@@ -318,6 +321,8 @@ EOF
 
 cat > /srv/salt/start_slaves.sh <<EOF
 source ~/.bash_profile
+jps | grep "DataNode" | cut -d " " -f 1 | xargs kill
+sleep 10
 /usr/local/hadoop/sbin/hadoop-daemon.sh --config /usr/local/hadoop/etc/hadoop --script hdfs start datanode
 EOF
 
@@ -329,7 +334,7 @@ cat > /srv/salt/start_slaves.sls <<EOF
     - group: root
     - mode: 500
 
-start_master:
+start_slaves:
   cmd.run:
     - name: /tmp/start_slaves.sh
     - require:
@@ -360,6 +365,6 @@ base:
     - hadoop_master_conf
 EOF
 
-salt '*' state.highstate
-salt '*master*' state.sls start_master
-salt '*minion*' state.sls start_slaves
+salt -t 120 '*' state.highstate
+salt -t 120 '*master*' state.sls start_master
+salt -t 120 '*minion*' state.sls start_slaves
