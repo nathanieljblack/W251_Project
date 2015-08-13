@@ -1,0 +1,49 @@
+- hosts: cluster
+  tasks:
+
+   - name: SSH keyscan IP
+     shell: awk '{system("ssh-keyscan "$1" >> /home/hadoop/.ssh/known_hosts")}' /etc/hosts
+     tags: keyscan
+
+   - name: SSH keyscan names
+     shell: awk '{system("ssh-keyscan "$2" >> /home/hadoop/.ssh/known_hosts")}' /etc/hosts
+     tags: keyscan
+   
+   - name: Create namenode and datanode directories
+     file: dest=/data/{{ item }} mode=0755 owner=hadoop state=directory
+     with_items:
+      - namenode
+      - datanode
+     sudo: yes
+
+- hosts: master
+  tasks:
+   - name: Hadoop namenode format
+     shell: su - hadoop -c "hadoop namenode -format"
+      executable:/bin/bash
+      creates:/data/namenode/current
+     tags: starthadoop
+
+   - name: Start Spark
+     shell: su - hadoop -c /usr/local/spark/sbin/start-all.sh
+     tags: startspark
+
+- hosts: cluster
+  tasks:
+   - name: Start Namenode
+     shell: su - hadoop -c /usr/local/hadoop/sbin/start-dfs.sh
+     tags: startnamenode
+
+   - name: Start HDFS
+     shell: su - hadoop -c /usr/local/hadoop/sbin/start-yarn.sh
+     tags: startdatanode
+
+- hosts: master
+  tasks:
+   - name: Make dir on HDFS
+     shell: su - hadoop -c "hadoop fs -mkdir /logisticregression"
+     tags: movedata
+
+   - name: Move CSVs to HDFS
+     shell: su - hadoop -c "hadoop fs -put /home/hadoop/*.csv /logisticregression"
+     tags: movedata2

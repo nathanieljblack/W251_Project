@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # provision a master
-#slcli vs create -d dal05 --os CENTOS_7_64 --cpu 1 --memory 1024 --hostname salt --domain w251final.net --key mids
+#slcli vs create -d dal05 --os CENTOS_7_64 --cpu 1 --memory 1024 --hostname saltmaster --domain w251final.net --key mids
 
 # to do:
 #   [x] parameterize user:key
@@ -9,6 +9,8 @@
 #   [] run provision command and wait for curl to return results
 #       e.g., while ! ping -c1 www.google.com &>/dev/null; do :; done
 #       from http://serverfault.com/questions/42021/how-to-ping-in-linux-until-host-is-known
+#   [] remove need to paste root pwd twice
+#   [] parameterize hostname
 
 # parse input arguments
 usage() { echo "Usage: $0 [-u <string> softlayer username] [-k <string> softlayer api key]" 1>&2; exit 1; }
@@ -30,7 +32,7 @@ if [ -z "${user}" ] || [ -z "${key}" ]; then
 fi
 
 # get details
-vs_hostname="salt8"
+vs_hostname="saltmaster2"
 masterdetails=$(curl 'https://'"${user}"':'"${key}"'@api.softlayer.com/rest/v3/SoftLayer_Account/VirtualGuests.json?objectMask=id;fullyQualifiedDomainName;hostname;domain;primaryIpAddress;operatingSystem.passwords' | jq -r '.[] | select (.hostname == "'"${vs_hostname}"'") |{fullyQualifiedDomainName,id,root_password: .operatingSystem.passwords[] | select(.username == "root").password,primaryIpAddress}')
 root_pwd=$(echo $masterdetails | jq -r '.["root_password"]')
 public_ip=$(echo $masterdetails | jq -r '.["primaryIpAddress"]')
@@ -75,6 +77,7 @@ cat /etc/salt/cloud.providers.d/softlayer.conf
 cat > /etc/salt/cloud.profiles.d/softlayer.conf << EOF
 sl_centos7_small:
   provider: sl
+  script_args: -D git v2015.8
   image: CENTOS_7_64
   cpu_number: 1
   ram: 1024

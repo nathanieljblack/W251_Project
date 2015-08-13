@@ -1,10 +1,12 @@
-master=saltspark28
-minions=(saltspark28 saltspark29)
+master=saltspark99
+minions=(saltspark100 saltspark101)
+domain=w251final.net
 
-echo "sl_centos7_small:" > /etc/salt/cloud.map
+echo "small:" > /etc/salt/cloud.map
 for minion in ${minions[@]}; do
     echo "  - ${minion}" >> /etc/salt/cloud.map
 done
+echo "  - $master" >> /etc/salt/cloud.map
 salt-cloud -m /etc/salt/cloud.map -P -y
 
 mkdir -p /srv/formulas
@@ -55,36 +57,43 @@ hdfs_data_disks:
 EOF
 
 for minion in ${minions[@]}; do
-    salt-cp "$minion" /tmp/minion_grains /etc/salt/grains
     salt-cp "$minion" /tmp/mine_functions.conf /etc/salt/minion.d/mine_functions.conf
-    # not sure if the following is necessary yet...
-    # fqdn="$minion"".w251final.net"
-    # salt "$minion" cmd.run "echo -e 'id: $fqdn' > /etc/salt/minion.d/local.conf"
-    # salt "$minion" service.restart "salt-minion"
-    # salt-key -y -a $fqdn && salt-key -y -d $minion
+    # change minion id to fqdn
+    fqdn="$minion"".w251final.net"
+    salt "$minion" cmd.run "echo -e 'id: $fqdn' > /etc/salt/minion.d/local.conf"
+    salt "$minion" service.restart "salt-minion"
+    sleep 15
+    salt-key -y -a $fqdn && salt-key -y -d $minion
+    salt-cp "$minion.$domain" /tmp/minion_grains /etc/salt/grains
 done
 
+salt-cp "$master" /tmp/mine_functions.conf /etc/salt/minion.d/mine_functions.conf
+# change minion id to fqdn
+fqdn="$master.$domain"
+salt "$master" cmd.run "echo -e 'id: $fqdn' > /etc/salt/minion.d/local.conf"
+salt "$master" service.restart "salt-minion"
+sleep 15
+salt-key -y -a $fqdn && salt-key -y -d $master
+salt-cp "$master.$domain" /tmp/minion_grains /etc/salt/grains
+
+# not able to run datanode on master, targeting multiple grains seems broken
 cat > /tmp/master_grains <<EOF
 roles:
+  - hadoop_slave
   - hadoop_master
 EOF
 
-salt-cp "$master" /tmp/master_grains /etc/salt/grains
+salt-cp "$master.$domain" /tmp/master_grains /etc/salt/grains
 
-# TODO
-# update hosts file
-# change ids of minions to fqdn
-# restart minions
-# accept keys
-
+#
 cat > /etc/salt/master <<EOF
 file_roots:
   base:
     - /srv/salt
-    - /srv/formulas/hostsfile-formula
     - /srv/formulas/ntp-formula
     - /srv/formulas/sun-java-formula
     - /srv/formulas/hadoop-formula
+    - /srv/formulas/hostsfile-formula
 fileserver_backend:
   - roots
 pillar_roots:
@@ -92,12 +101,12 @@ pillar_roots:
     - /srv/pillar
 EOF
 
+# - hosts
+# - root.ssh
+# - root.bash_profile
 cat > /srv/salt/top.sls <<EOF
 base:
   '*':
-    - hosts
-    - root.ssh
-    - root.bash_profile
     - provision_hdfs
     - provision_hadoop
     - hadoop
@@ -111,11 +120,11 @@ prep:
   salt.state:
     - tgt: '*'
     - sls:
-      - hostsfile
-      - hostsfile.hostname
       - ntp.server
       - sun-java
       - sun-java.env
+      - hostsfile
+      - hostsfile.hostname
 
 hadoop_services:
   salt.state:
@@ -144,5 +153,7 @@ EOF
 
 # for some reason, need to manually generate keys
 /srv/formulas/hadoop-formula/hadoop/files/generate_keypairs.sh
+
+service salt-master restart
 
 salt-run state.orchestrate orchestration.provision_hadoop

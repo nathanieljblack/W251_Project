@@ -3,6 +3,7 @@
 # TODO
 # [] add command line argument for number of nodes
 # git clone repo to get files on saltmaster
+# get rid of all cmd.run lines
 
 master=saltspark97
 minions=(saltspark97 saltspark98)
@@ -31,11 +32,6 @@ for minion in ${minions[@]}; do
 done
 salt-cloud -m /etc/salt/cloud.map -P -y
 
-# get private ips and hostnames and store in roster
-# !! don't need roster file, should look at minions to determine which
-# machines to put in hosts file below
-#salt '*' network.interface_ip eth0 | sed 'N;s/\n\ \+/ /' > /etc/salt/roster
-
 # configure salt states
 cat > /etc/salt/master <<EOF
 file_roots:
@@ -58,34 +54,6 @@ base:
     - hosts
 EOF
 
-# # create /srv/salt/hosts.sls
-# cat > /srv/salt/hosts.sls << EOF
-# localhost-hosts-entry:
-#   host.present:
-#     - ip: 127.0.0.1
-#     - names:
-#       - localhost
-#       - localhost.localdomain
-# EOF
-# IFS=$'\n'
-# lines=""
-# i=0
-# # iterate over hostnames and ips already stored in roster file
-# for line in $(cat /etc/salt/roster) ; do
-#   ((i++))
-#   hostname=$(echo $line | awk -F": " '{print $1}')
-#   privateip=$(echo $line | awk -F": " '{print $2}')
-#   line1=$(printf "node$i-hosts-entry:")
-#   line2=$(printf "  host.present:")
-#   line3=$(printf "    - ip: $privateip")
-#   line4=$(printf "    - names:")
-#   line5=$(printf "      - $hostname")
-#   lines=$(printf "${lines}\n${line1}\n${line2}\n${line3}\n${line4}\n${line5}")
-# done
-# printf "%s\n" "$lines" >> /srv/salt/hosts.sls
-# # set field separator back to default
-# IFS=$' \t\n'
-
 # # set up hosts file
 # mkdir -p /srv/formulas
 # cd /srv/formulas
@@ -103,6 +71,7 @@ EOF
 # EOF
 #
 # salt '*' state.sls hosts_prep
+
 sleep 30
 i=0
 for minion in ${minions[@]}; do
@@ -134,8 +103,6 @@ done
 mkdir /srv/salt/sshkeys
 ssh-keygen -y -N '' -f /srv/salt/sshkeys/id_rsa
 export PUBLIC_KEY=`cat /srv/salt/sshkeys/id_rsa.pub | cut -d ' ' -f 2`
-# #sudo salt-cp "$master" /tmp/id_rsa /root/.ssh/id_rsa
-# #sudo salt-cp "$master" /tmp/id_rsa.pub /root/.ssh/id_rsa.pub
 
 # adds public key to authorized_keys file
 cat > /srv/salt/root/ssh.sls <<EOF
@@ -170,6 +137,7 @@ cat > /srv/salt/root/bash_profile.sls <<EOF
 EOF
 
 salt '*' state.highstate
+# convert to functions
 salt '*' cmd.run 'yum install -y java-1.8.0-openjdk-headless'
 salt '*' cmd.run "curl http://d3kbcqa49mib13.cloudfront.net/spark-1.4.0-bin-hadoop2.6.tgz | tar -zx -C /usr/local --show-transformed --transform='s,/*[^/]*,spark,'"
 
