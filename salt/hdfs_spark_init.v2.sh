@@ -1,5 +1,5 @@
-master=master8
-minions=($master minion15 minion16 minion17)
+master=master10
+minions=($master minion21 minion22)
 domain=w251final.net
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf <<EOF
@@ -296,7 +296,7 @@ source ~/.bash_profile
 /usr/local/hadoop/sbin/stop-all.sh
 jps | grep "NameNode" | cut -d " " -f 1 | xargs kill
 sleep 10
-hadoop namenode -y -format
+yes | hadoop namenode -format
 /usr/local/hadoop/sbin/hadoop-daemon.sh --config /usr/local/hadoop/etc/hadoop --script hdfs start namenode
 
 /usr/local/spark/sbin/stop-all.sh
