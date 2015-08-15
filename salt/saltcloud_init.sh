@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # provision a master
-#slcli vs create -d dal05 --os CENTOS_7_64 --cpu 1 --memory 1024 --hostname saltmaster --domain w251final.net --key mids
+# slcli vs create -d dal05 --os CENTOS_7_64 --cpu 1 --memory 1024 --hostname saltmaster --domain w251final.net --key mids
 
 # to do:
 #   [x] parameterize user:key
