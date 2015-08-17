@@ -1,25 +1,17 @@
 #!/bin/bash
 
-# provision a master
-# slcli vs create -d dal05 --os CENTOS_7_64 --cpu 1 --memory 1024 --hostname saltmaster --domain w251final.net --key mids
-
-# to do:
-#   [x] parameterize user:key
-#   [] display private ip
-#   [] run provision command and wait for curl to return results
-#       e.g., while ! ping -c1 www.google.com &>/dev/null; do :; done
-#       from http://serverfault.com/questions/42021/how-to-ping-in-linux-until-host-is-known
-#   [] remove need to paste root pwd twice
-#   [] parameterize hostname
-
 # parse input arguments
-usage() { echo "Usage: $0 [-u <string> softlayer username] [-k <string> softlayer api key]" 1>&2; exit 1; }
+usage() { echo "Usage: $0 [-u <string> softlayer username] [-k <string> softlayer api key] [-h <string> hostname] [-i <string> SSH key id]" 1>&2; exit 1; }
 
-while getopts ":u:k:" opt; do
+while getopts ":u:k:h:i:" opt; do
   case $opt in
     u) user="$OPTARG"
     ;;
     k) key="$OPTARG"
+    ;;
+    h) hostname="$OPTARG"
+    ;;
+    i) keyid="$OPTARG"
     ;;
     *) usage
     ;;
@@ -27,16 +19,33 @@ while getopts ":u:k:" opt; do
 done
 shift $((OPTIND-1))
 
-if [ -z "${user}" ] || [ -z "${key}" ]; then
+if ([ -z "$user" ] && [ -z "$ST_USER" ]) || ([ -z "$key" ] && [ -z "$ST_KEY" ]) || [ -z "$hostname" ]; then
     usage
 fi
 
+# if a username wasn't supplied in arguments, parse from environment variable
+if [ -z "$user" ]; then
+  user=$(echo $ST_USER | cut -d":" -f2)
+fi
+
+if [ -z "$key"]; then
+  key=$ST_KEY
+fi
+
+# provision a master
+yes | slcli vs create -d sjc01 --os CENTOS_7_64 --cpu 1 --memory 1024 --hostname $hostname --domain w251final.net --key $keyid
+
+slcli vs ready $hostname --wait=600
+
 # get details
-vs_hostname="saltmaster2"
-masterdetails=$(curl 'https://'"${user}"':'"${key}"'@api.softlayer.com/rest/v3/SoftLayer_Account/VirtualGuests.json?objectMask=id;fullyQualifiedDomainName;hostname;domain;primaryIpAddress;operatingSystem.passwords' | jq -r '.[] | select (.hostname == "'"${vs_hostname}"'") |{fullyQualifiedDomainName,id,root_password: .operatingSystem.passwords[] | select(.username == "root").password,primaryIpAddress}')
+masterdetails=$(curl 'https://'"${user}"':'"${key}"'@api.softlayer.com/rest/v3/SoftLayer_Account/VirtualGuests.json?objectMask=id;fullyQualifiedDomainName;hostname;domain;primaryIpAddress;operatingSystem.passwords' | jq -r '.[] | select (.hostname == "'"${hostname}"'") |{fullyQualifiedDomainName,id,root_password: .operatingSystem.passwords[] | select(.username == "root").password,primaryIpAddress}')
 root_pwd=$(echo $masterdetails | jq -r '.["root_password"]')
 public_ip=$(echo $masterdetails | jq -r '.["primaryIpAddress"]')
 
+echo "----------------------------------"
+echo "root password"
+echo $root_pwd
+echo "----------------------------------"
 # add saltmaster to known hosts to bypass y/n prompt
 #ssh-keyscan $public_ip >> ~/.ssh/known_hosts
 
@@ -46,11 +55,14 @@ public_ip=$(echo $masterdetails | jq -r '.["primaryIpAddress"]')
 # set up passwordless ssh
 #cat ~/.ssh/id_rsa.pub | ssh root@$public_ip 'cat >> ~/.ssh/authorized_keys'
 
+# go to directory of script
+cd ${0%/*}
+
 # copy patch file to server
 scp softlayer.patch root@$public_ip:/tmp
 
 # configure salt cloud
-ssh root@$public_ip << END_OF_COMMANDS
+ssh root@$public_ip <<END_OF_COMMANDS
 curl -o /tmp/install_salt.sh -L https://bootstrap.saltstack.com && sh /tmp/install_salt.sh -Z -M git 2015.8
 # yum for centos, apt-get for ubuntu
 yum install -y python-pip && pip install SoftLayer apache-libcloud
@@ -90,13 +102,11 @@ sl_centos7_small:
   location: dal05
 EOF
 
-# install patch from jonathan's email to allow provisioning multiple disks
-#git clone https://gist.github.com/517a92941181f8d2d3d1.git:patch
+# install jonathan's patch to allow provisioning multiple disks
 yum install -y patch
-# find doesn't work over ssh?
+# find doesn't work over ssh, executed on master...
 #find /usr/ -wholename "*salt/cloud/clouds/softlayer.py"
 #cd $(dirname $(!! | head -1))
 cd /usr/lib/python2.7/site-packages/salt/cloud/clouds
 patch -p4 < /tmp/softlayer.patch
-
 END_OF_COMMANDS
