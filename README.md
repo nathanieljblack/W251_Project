@@ -3,6 +3,9 @@
 
 This project explores different methods of large-scale image classification. The first method uses the Apache Spark framework while the second uses deep learning on GPUs with Python's Theano library.
 
+##Exploratory Analysis
+``exploratory_analysis/training_data.md`` is a brief description of the data acquisition and data size.  
+
 ##Single Machine Attempt
 `single_machine_attempt` was an exploratory analysis and provided evidence that the problem was too large for a single machine. The `single_machine_attempt/README.md` outlines some of the key findings and shows sample output from the analysis.  
 
