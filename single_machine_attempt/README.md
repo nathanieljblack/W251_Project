@@ -1,3 +1,6 @@
+#Gist  
+This directory provides an overview of the testing that was conducted on a single machine. The single machine was a very high-end VM and the results led the team to believe that we required a more robust solution- ie. required GPU programming or distributed computing. Some of the highlights of the analysis are listed below.
+
 #Configuration
 
 Ubuntu 14.04  
