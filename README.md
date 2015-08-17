@@ -4,7 +4,9 @@
 This project explores different methods of large-scale image classification. The first method uses the Apache Spark framework while the second uses deep learning on GPUs with Python's Theano library.
 
 ##General Dataset Information
-Created a test VM to test the download time of the training data. Ran into some issues using ``wget`` to download the data - you need to be a registered user to download the data. Therefore, you must copy your local cookies into a text file and pass that to the ``wget`` call (or do some other workaround). Commands below.
+The following is a brief description of the dataset. Sample images and labels can be found in the `sample` directory.
+
+We ran into some issues using ``wget`` to download the data - you need to be a registered user to download the data. Therefore, you must copy your local cookies into a text file and pass that to the ``wget`` call (or do some other workaround). Commands below.
 
 ```
 [root@test ~]# mkdir data
@@ -14,11 +16,12 @@ Created a test VM to test the download time of the training data. Ran into some 
 ```  
 
 Download took an hour with ``network=1000`` on the VM.
+
 ```
 FINISHED --2015-06-15 19:04:53--
 Downloaded: 5 files, 33G in 1h 1m 28s (9.05 MB/s)
 ```
-#How Big is Unzipped Training Data?  
+###How Big is Unzipped Training Data?  
 The training files are pieces of a single archive so they were combined and then unzipped. Deleted the individual zip components to save space. Unzip took ~30 minutes.
 
 ```
@@ -38,7 +41,8 @@ train  train.zip
 
 ```
 
-Case Information
+The distribution of the training data is highly skewed.  
+
 ```
 Cases     Level			Proportion
 
@@ -48,7 +52,8 @@ Cases     Level			Proportion
   873  3 - Severe             2%
   708  4 - Proliferative DR   2%
 35126  Total
-```
+```  
+
 ##Single Machine Attempt
 `single_machine_attempt` was an exploratory analysis and provided evidence that the problem was too large for a single machine. The `single_machine_attempt/README.md` outlines some of the key findings and shows sample output from the analysis.  
 
