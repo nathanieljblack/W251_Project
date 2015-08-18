@@ -29,6 +29,9 @@ The training files are pieces of a single archive so they were combined and then
 [root@test download]# unzip train.zip
 ```
 
+Sample image:
+<img src='./sample/10_left.jpeg'> 
+
 35,126 images - 33 GB zipped, 36GB unzipped
 ```
 [root@test download]# ls
