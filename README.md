@@ -90,7 +90,7 @@ $SPARK_HOME/bin/spark-submit --class "w251.project.logisticregression.LogisticRe
 
 After the process runs, an output file will be in the `/home/hadoop/` directory. This file is in the needed format for a Kaggle submission.   
    
-Some diagnotics regarding the prediction:
+Some diagnostics regarding the prediction:
 
 ```
 Precision = 0.7372774428711623
