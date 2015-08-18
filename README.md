@@ -87,3 +87,7 @@ ADD SPARK SUBMIT COMMAND HERE
 
 After the process runs, an output file will be in the `/home/hadoop/` directory. This file is in the needed format for a Kaggle submission.
 
+##Results  
+A graphical display of the results can be found at <a href="http://nathanieljblack.github.io/W251_Project/">http://nathanieljblack.github.io/W251_Project/</a>
+
+Test results from the Spark runs can be found in the `spark_data` directory.
