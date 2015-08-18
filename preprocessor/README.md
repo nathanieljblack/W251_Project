@@ -6,7 +6,7 @@ A simple preprocessor, `resize_spark_mapper` takes in an image file, and resizes
 - Crops both the height and width by 10% 
 - Resizes it to 512 x 512
 
-I used the spark setup provisioned for hw6. I had to install the following packages:
+Using a Spark setup, install the following packages:
 - gcc
 - gcc-c++
 - python-devel
@@ -17,7 +17,7 @@ I used the spark setup provisioned for hw6. I had to install the following packa
 - Pillow (upgrade if already installed)
 
 At this time, in order to run this, the following must be satistfied:
-- The repository is cloned at the home directory level on all the nodes
+- This repository is cloned at the home directory level on all the nodes
 - All the above packages need to be installed on all the nodes
 
 Then, run the following:
