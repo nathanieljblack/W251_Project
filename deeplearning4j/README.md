@@ -37,9 +37,6 @@ mvn clean install -DskipTests -Dmaven.javadoc.skip=true
 cd
 cd deeplearning4j
 mvn clean install -DskipTests -Dmaven.javadoc.skip=true
-cd
-cd dl4j-spark-ml
-mvn clean install -DskipTests -Dmaven.javadoc.skip=true
 ```
 
 
