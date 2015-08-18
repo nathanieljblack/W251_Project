@@ -85,10 +85,25 @@ sbt assembly
 After the project is built, use `spark-submit` to run the process.
 
 ```
-ADD SPARK SUBMIT COMMAND HERE
+$SPARK_HOME/bin/spark-submit --class "w251.project.logisticregression.LogisticRegression" --master spark://sp1:7077 --num-executors 8 --executor-memory 9g --executor-cores 7 /home/hadoop/target/scala-2.10/LogisticRegression-assembly-1.0.jar hdfs://sp1:9000/logisticregression/train_256.csv hdfs://sp1:9000/logisticregression/test_256.csv /home/hadoop/out_256.txt 
 ```
 
-After the process runs, an output file will be in the `/home/hadoop/` directory. This file is in the needed format for a Kaggle submission.
+After the process runs, an output file will be in the `/home/hadoop/` directory. This file is in the needed format for a Kaggle submission.   
+   
+Some diagnotics regarding the prediction:
+
+```
+Precision = 0.7372774428711623
+F1 = 0.7372774428711623
+Recall = 0.7372774428711623
+
+===Confusion Matrix ===
+5254.0  1.0  16.0  0.0  3.0
+477.0   0.0  3.0   0.0  1.0
+1069.0  1.0  5.0   0.0  0.0
+163.0   0.0  1.0   0.0  0.0
+135.0   0.0  3.0   1.0  0.0
+```
 
 ##Results  
 A graphical display of the results can be found at <a href="http://nathanieljblack.github.io/W251_Project/">http://nathanieljblack.github.io/W251_Project/</a>
