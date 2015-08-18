@@ -29,4 +29,4 @@ $SPARK_HOME/bin/spark-submit resize_spark_mapper.py <test_or_train> <image_size>
 ```
         
 The preprocessed files will be saved at `/root/W251_Project/preprocessor/<test_or_train>_<image_size>`.    
-This also generates a `<test_or_tran>_<image_size>.csv` file which contains the flattened arrays corresponding to all images stored as Comma Separated Values (csv).
+This also generates a `<test_or_train>_<image_size>.csv` file which contains the flattened arrays corresponding to all images stored as Comma Separated Values (csv).
