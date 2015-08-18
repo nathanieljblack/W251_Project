@@ -19,7 +19,7 @@ while getopts ":u:k:h:i:" opt; do
 done
 shift $((OPTIND-1))
 
-if ([ -z "$user" ] && [ -z "$ST_USER" ]) || ([ -z "$key" ] && [ -z "$ST_KEY" ]) || [ -z "$hostname" ]; then
+if ([ -z "$user" ] && [ -z "$ST_USER" ]) || ([ -z "$key" ] && [ -z "$ST_KEY" ]) || [ -z "$hostname" ] || [ -z "$keyid" ]; then
     usage
 fi
 
