@@ -85,7 +85,7 @@ sbt assembly
 After the project is built, use `spark-submit` to run the process.
 
 ```
-$SPARK_HOME/bin/spark-submit --class "w251.project.logisticregression.LogisticRegression" --master spark://sp1:7077 --num-executors 8 --executor-memory 9g --executor-cores 7 /home/hadoop/target/scala-2.10/LogisticRegression-assembly-1.0.jar hdfs://sp1:9000/logisticregression/train_256.csv hdfs://sp1:9000/logisticregression/test_256.csv /home/hadoop/out_256.txt 
+$SPARK_HOME/bin/spark-submit --class "w251.project.logisticregression.LogisticRegression" --master spark://sp1:7077 --num-executors 8 --executor-memory 9g --executor-cores 7 /home/hadoop/target/scala-2.10/LogisticRegression-assembly-1.0.jar hdfs://sp1:9000/logisticregression/train_64.csv hdfs://sp1:9000/logisticregression/test_64.csv /home/hadoop/out_64.txt 
 ```
 
 After the process runs, an output file will be in the `/home/hadoop/` directory. This file is in the needed format for a Kaggle submission.   
