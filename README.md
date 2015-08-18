@@ -31,6 +31,7 @@ The training files are pieces of a single archive so they were combined and then
 
 Sample image:
 <img src='./sample/10_left.jpeg'> 
+The ``sample`` directory has some more example image files.   
 
 35,126 images - 33 GB zipped, 36GB unzipped
 ```
