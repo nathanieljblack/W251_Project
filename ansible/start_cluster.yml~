@@ -1,0 +1,8 @@
+- hosts: local
+  vars:
+    num_nodes: "{{ NUM_NODES|default(3) }}"
+  tasks:
+   #This only works if you have passwordless sudo and old SoftLayer.API Python module. Need full path
+   - name: Provision VMs
+     shell: /home/nate_black/anaconda/bin/python /home/nate_black/Dropbox/MIDS/SU/Assignments/ansiblev2/start_cluster/provision.py {{ num_nodes }}
+     tags: provision
