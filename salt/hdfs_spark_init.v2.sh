@@ -1,5 +1,5 @@
-master=master10
-minions=($master minion21 minion22)
+master=master11
+minions=($master minion25 minion26)
 domain=w251final.net
 
 cat > /etc/salt/cloud.profiles.d/softlayer.conf <<EOF
