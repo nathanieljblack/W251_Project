@@ -4,7 +4,7 @@ A simple preprocessor, `resize_spark_mapper` takes in an image file, and resizes
 
 - Makes it a square by cutting off extra width or height
 - Crops both the height and width by 10% 
-- Resizes it to 512 x 512
+- Resizes it to the required size
 
 Using a Spark setup, install the following packages:
 - gcc

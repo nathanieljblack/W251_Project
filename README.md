@@ -31,6 +31,7 @@ The training files are pieces of a single archive so they were combined and then
 
 Sample image:
 <img src='./sample/10_left.jpeg'> 
+The ``sample`` directory has some more example image files.   
 
 35,126 images - 33 GB zipped, 36GB unzipped
 ```
@@ -109,3 +110,6 @@ Recall = 0.7372774428711623
 A graphical display of the results can be found at <a href="http://nathanieljblack.github.io/W251_Project/">http://nathanieljblack.github.io/W251_Project/</a>
 
 Test results from the Spark runs can be found in the `spark_data` directory.
+
+##Deep Learning  
+Deep learning was another aspect of the project that was conducted using Theano and GPU programming. The `README.md` in the `convolutional_neural_net` directory outlines the setup and various packages used for deep learning. 
